@@ -113,15 +113,41 @@ def runApriori(data_iter, minSupport, minConfidence):
     return toRetItems, toRetRules
 
 
-def printResults(items, rules):
+def printResults(items, rules, fn_items=None, fn_rules=None):
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
+    fd_items = None
+    fd_rules = None
+    if fn_items is not None:
+        fd_items = open(fn_items, 'w')
+    if fn_rules is not None:
+        fd_rules = open(fn_rules, 'w')
     for item, support in sorted(items, key=lambda obj: obj[1]):
         print("item: {} , {:.3f}".format(str(item), support))
+        if fd_items is not None:
+            fd_items.write(str(support))
+            for elem in item:
+                fd_items.write(',')
+                fd_items.write(elem)
+            fd_items.write('\n')
+    if fd_items is not None:
+        fd_items.close()
     print("\n------------------------ RULES:")
     for rule, confidence in sorted(rules, key=lambda obj: obj[1]):
         pre, post = rule
         print("Rule: %s ==> %s , %.3f" % (str(pre), str(post), confidence))
-
+        if fd_rules is not None:
+            fd_rules.write(str(confidence))
+            fd_rules.write(',')
+            for elem in pre:
+                fd_rules.write(elem)
+                fd_rules.write('|')
+            fd_rules.write(',')
+            for elem in post:
+                fd_rules.write(elem)
+                fd_rules.write('|')
+            fd_rules.write('\n')
+    if fd_rules is not None:
+        fd_rules.close()
 
 def dataFromFile(fname):
         """Function which reads from the file and yields a generator"""

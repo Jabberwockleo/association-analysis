@@ -25,10 +25,22 @@ class treeNode:
     def inc(self, numOccur):
         self.count += numOccur
     #display tree in text. Useful for debugging        
-    def disp(self, ind=1):
-        print ('-'*ind, self.name, ':', self.count)
+    def disp(self, ind=1, fname=None, fd=None, df=None):
+        file = fd
+        if fname is not None:
+            file = open(fname, 'w')
+        printStr = '-'*ind + self.name + ':' + str(self.count)
+        print(printStr)
+        if file is not None:
+            info = ""
+            if self.name != "TreeRoot" and df is not None:
+                info = df.loc[self.name].iloc[0]['content'] + df.loc[self.name].iloc[0]['slots']
+            file.write(printStr + ' info:' + info + '\n')
+        #print ('-'*ind, self.name, ':', self.count)
         for child in self.children.values():
-            child.disp(ind+1)
+            child.disp(ind+1, fname=None, fd=file, df=df)
+        if fname is not None:
+            file.close()
 
 def createTree(dataSet, minSup=2): #create FP-tree from dataset but don't mine
     headerTable = {}
@@ -45,7 +57,7 @@ def createTree(dataSet, minSup=2): #create FP-tree from dataset but don't mine
     for k in headerTable:
         headerTable[k] = [headerTable[k], None] #reformat headerTable to use Node link 
     #print 'headerTable: ',headerTable
-    retTree = treeNode('Null Set', 1, None) #create tree
+    retTree = treeNode('TreeRoot', 1, None) #create tree
     for tranSet, count in dataSet.items():  #go through dataset 2nd time
         localD = {}
         for item in tranSet:  #put transaction items in order
