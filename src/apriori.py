@@ -31,15 +31,15 @@ def join_itemsets_with_fixed_elem_size(itemsets, elem_size):
         for b in itemsets:
             candidate = a.union(b)
             if len(candidate) == elem_size:
-                # prone
-                proned = False
+                # prune
+                pruned = False
                 if candidate in joint_itemsets:
                     continue
                 for elem in create_subset_generator(candidate, subset_size=elem_size - 1):
                     subset = frozenset(elem)
                     if subset not in itemsets:
-                        proned = True
-                if not proned:
+                        pruned = True
+                if not pruned:
                     joint_itemsets.add(candidate)
     return joint_itemsets
 
@@ -142,5 +142,4 @@ def run(data_iter, min_support, min_confidence, output_support_only=False):
                     if confidence >= min_confidence:
                         recommendation_rules_with_confidence.append(
                             (confidence, (tuple(subset), tuple(recom_candidate))))
-
     return large_itemsets_with_support, recommendation_rules_with_confidence
