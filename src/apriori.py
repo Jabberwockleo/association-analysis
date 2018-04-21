@@ -63,13 +63,26 @@ def load_file(fname):
         yield actionlist
 
 def dump(itemset, rules):
+    fn_items = "out_large_itemsets.csv"
+    fn_rules = "out_recom_rules.csv"
+    fd_items = open(fn_items, 'w')
+    fd_rules = open(fn_rules, 'w')
     for sup, items in sorted(itemset, key=lambda x: x[0]):
         print("Itemset: {} support: {:.3f}".format(items, sup))
+        fd_items.write(str(sup) + ',')
+        fd_items.write(','.join(items))
+        fd_items.write('\n')
+    fd_items.close()
     for con, rule in sorted(rules, key=lambda x: x[0]):
         items, recom = rule
         print("Rule: {} => {} support: {:.3f}".format(items, recom, con))
+        fd_rules.write(str(con) + ',')
+        fd_rules.write('|'.join(items) + ',')
+        fd_rules.write('|'.join(recom))
+        fd_rules.write('\n')
+    fd_rules.close()
 
-def run(data_iter, min_support, min_confidence):
+def run(data_iter, min_support, min_confidence, compute_support_only=False):
     seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
     actionsets_size = len(actionsets)
     support_dict = defaultdict(int)
@@ -93,6 +106,14 @@ def run(data_iter, min_support, min_confidence):
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
+    
+    if compute_support_only:
+        for length, itemsets in large_itemsets_dict.items():
+                large_itemsets_with_support.extend(
+                    [(1.0 * support_dict[itemset] / actionsets_size,
+                        tuple(itemset)) for itemset in itemsets])
+        return large_itemsets_with_support, recommendation_rules_with_confidence
+    
     for length, itemsets in large_itemsets_dict.items():
         large_itemsets_with_support.extend(
             [(1.0 * support_dict[itemset] / actionsets_size, tuple(itemset)) for itemset in itemsets])
