@@ -1,2 +1,2 @@
 # association-analysis
-association analysis scratch codes
+Reference Implementation of [Agrawal, R., et al., 1994]
