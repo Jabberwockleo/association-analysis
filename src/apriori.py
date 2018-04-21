@@ -18,18 +18,30 @@ from collections import defaultdict
 
 def update_support_dict(sup_dict, update_dict):
     sup_dict.update(update_dict)
-    
+
+def create_subset_generator(itemset, subset_size=None):
+    if subset_size is None:
+        return chain(*[combinations(itemset, i + 1) for i in range(len(itemset))])
+    else:
+        return chain(*[combinations(itemset, subset_size)])
+
 def join_itemsets_with_fixed_elem_size(itemsets, elem_size):
     joint_itemsets = set()
     for a in itemsets:
-       for b in itemsets:
-           candidate = a.union(b)
-           if len(candidate) == elem_size:
-               joint_itemsets.add(candidate)
+        for b in itemsets:
+            candidate = a.union(b)
+            if len(candidate) == elem_size:
+                # prone
+                proned = False
+                if candidate in joint_itemsets:
+                    continue
+                for elem in create_subset_generator(candidate, subset_size=elem_size - 1):
+                    subset = frozenset(elem)
+                    if subset not in itemsets:
+                        proned = True
+                if not proned:
+                    joint_itemsets.add(candidate)
     return joint_itemsets
-
-def create_subset_generator(itemset):
-    return chain(*[combinations(itemset, i + 1) for i in range(len(itemset))])
 
 def generate_seed_itemsets_and_actionsets(data_iter):
     actionsets = list() # type list
@@ -44,6 +56,7 @@ def generate_seed_itemsets_and_actionsets(data_iter):
 def get_support_itemsets(candidate_itemsets, actionsets, min_sup):
     itemsets = set()
     count_dict = defaultdict(int)
+    update_dict = defaultdict(int) # only needs to record subsets of large_itemsets
     for itemset in candidate_itemsets:
         for actionset in actionsets:
             if itemset.issubset(actionset):
@@ -53,7 +66,8 @@ def get_support_itemsets(candidate_itemsets, actionsets, min_sup):
         sup = float(count) / list_len
         if sup >= min_sup:
            itemsets.add(itemset)
-    return itemsets, count_dict
+           update_dict[itemset] = count
+    return itemsets, update_dict
 
 def load_file(fname):
     fd = open(fname, 'r')
@@ -82,7 +96,7 @@ def dump(itemset, rules):
         fd_rules.write('\n')
     fd_rules.close()
 
-def run(data_iter, min_support, min_confidence, compute_support_only=False):
+def run(data_iter, min_support, min_confidence, output_support_only=False):
     seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
     actionsets_size = len(actionsets)
     support_dict = defaultdict(int)
@@ -107,7 +121,7 @@ def run(data_iter, min_support, min_confidence, compute_support_only=False):
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
     
-    if compute_support_only:
+    if output_support_only:
         for length, itemsets in large_itemsets_dict.items():
                 large_itemsets_with_support.extend(
                     [(1.0 * support_dict[itemset] / actionsets_size,
