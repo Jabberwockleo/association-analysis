@@ -13,6 +13,7 @@ Date: 2018/04/11 08:24:31
 """
 
 import sys
+import time
 from itertools import chain, combinations
 from collections import defaultdict
 
@@ -121,25 +122,23 @@ def run(data_iter, min_support, min_confidence, output_support_only=False):
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
     
-    if output_support_only:
-        for length, itemsets in large_itemsets_dict.items():
-                large_itemsets_with_support.extend(
-                    [(1.0 * support_dict[itemset] / actionsets_size,
-                        tuple(itemset)) for itemset in itemsets])
-        return large_itemsets_with_support, recommendation_rules_with_confidence
-    
     for length, itemsets in large_itemsets_dict.items():
         large_itemsets_with_support.extend(
             [(1.0 * support_dict[itemset] / actionsets_size, tuple(itemset)) for itemset in itemsets])
+    
+    if output_support_only:
+        return large_itemsets_with_support, recommendation_rules_with_confidence
+            
+    for length, itemsets in large_itemsets_dict.items():
         for itemset in itemsets:
             sup_itemset = 1.0 * support_dict[itemset] / actionsets_size
             for subset in create_subset_generator(itemset):
                 subset = frozenset(subset)
-                recom_candidate = itemset.difference(subset)
-                if len(recom_candidate) > 0:
+                if len(itemset) > len(subset):
                     sup_subset = 1.0 * support_dict[subset] / actionsets_size
                     confidence = sup_itemset / sup_subset
                     if confidence >= min_confidence:
+                        recom_candidate = itemset.difference(subset)
                         recommendation_rules_with_confidence.append(
                             (confidence, (tuple(subset), tuple(recom_candidate))))
     return large_itemsets_with_support, recommendation_rules_with_confidence
