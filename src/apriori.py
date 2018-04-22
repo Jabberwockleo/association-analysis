@@ -62,9 +62,10 @@ def get_support_itemsets(candidate_itemsets, actionsets, min_sup):
         for actionset in actionsets:
             if itemset.issubset(actionset):
                 count_dict[itemset] += 1
-    list_len = len(actionsets)
+    #list_len = len(actionsets)
     for itemset, count in count_dict.items():
-        sup = float(count) / list_len
+        #sup = float(count) / list_len
+        sup = count
         if sup >= min_sup:
            itemsets.add(itemset)
            update_dict[itemset] = count
@@ -90,7 +91,7 @@ def dump(itemset, rules):
     fd_items.close()
     for con, rule in sorted(rules, key=lambda x: x[0]):
         items, recom = rule
-        print("Rule: {} => {} support: {:.3f}".format(items, recom, con))
+        print("Rule: {} => {} confidence: {:.3f}".format(items, recom, con))
         fd_rules.write(str(con) + ',')
         fd_rules.write('|'.join(items) + ',')
         fd_rules.write('|'.join(recom))
@@ -99,7 +100,6 @@ def dump(itemset, rules):
 
 def run(data_iter, min_support, min_confidence, output_support_only=False):
     seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
-    actionsets_size = len(actionsets)
     support_dict = defaultdict(int)
     large_itemsets_dict = dict() # key: length val: set of itemset
     # seeding
@@ -124,19 +124,19 @@ def run(data_iter, min_support, min_confidence, output_support_only=False):
     
     for length, itemsets in large_itemsets_dict.items():
         large_itemsets_with_support.extend(
-            [(1.0 * support_dict[itemset] / actionsets_size, tuple(itemset)) for itemset in itemsets])
+            [(support_dict[itemset], tuple(itemset)) for itemset in itemsets])
     
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
             
     for length, itemsets in large_itemsets_dict.items():
         for itemset in itemsets:
-            sup_itemset = 1.0 * support_dict[itemset] / actionsets_size
+            sup_itemset = support_dict[itemset]
             for subset in create_subset_generator(itemset):
                 subset = frozenset(subset)
                 if len(itemset) > len(subset):
-                    sup_subset = 1.0 * support_dict[subset] / actionsets_size
-                    confidence = sup_itemset / sup_subset
+                    sup_subset = support_dict[subset]
+                    confidence = 1.0 * sup_itemset / sup_subset
                     if confidence >= min_confidence:
                         recom_candidate = itemset.difference(subset)
                         recommendation_rules_with_confidence.append(
