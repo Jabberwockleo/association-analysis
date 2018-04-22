@@ -32,7 +32,7 @@ def join_itemsets_with_fixed_elem_size(itemsets, elem_size):
         for b in itemsets:
             candidate = a.union(b)
             if len(candidate) == elem_size:
-                # prune
+                # prune redundant branch
                 pruned = False
                 if candidate in joint_itemsets:
                     continue
@@ -59,7 +59,7 @@ def get_support_itemsets(candidate_itemsets, actionsets, min_sup):
     count_dict = defaultdict(int)
     update_dict = defaultdict(int) # only needs to record subsets of large_itemsets
     for itemset in candidate_itemsets:
-        for actionset in actionsets:
+        for actionset in actionsets: # drawback: time consuming
             if itemset.issubset(actionset):
                 count_dict[itemset] += 1
     #list_len = len(actionsets)
@@ -76,7 +76,7 @@ def load_file(fname):
     for line in fd:
         line = line.strip().rstrip(',')
         actionlist = frozenset(line.split(','))
-        yield actionlist
+        yield actionset
 
 def dump(itemset, rules):
     fn_items = "out_large_itemsets.csv"
@@ -98,8 +98,7 @@ def dump(itemset, rules):
         fd_rules.write('\n')
     fd_rules.close()
 
-def run(data_iter, min_support, min_confidence, output_support_only=False):
-    seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
+def compute_large_itemsets(seed_itemsets, actionsets, min_support):
     support_dict = defaultdict(int)
     large_itemsets_dict = dict() # key: length val: set of itemset
     # seeding
@@ -118,6 +117,11 @@ def run(data_iter, min_support, min_confidence, output_support_only=False):
         cur_large_itemsets, update_dict = get_support_itemsets(
             candidate_itemsets, actionsets, min_support)
         update_support_dict(support_dict, update_dict)
+    return large_itemsets_dict, support_dict
+
+def run(data_iter, min_support, min_confidence, output_support_only=False):
+    seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
+    large_itemsets_dict, support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
