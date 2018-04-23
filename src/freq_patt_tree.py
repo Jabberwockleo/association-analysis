@@ -77,17 +77,15 @@ def update_tree(current_node, header, ordered_actions, actionset_count, largeite
         update_tree(current_node.children[item], header,
             ordered_actions[1::], actionset_count, largeitem_count_dict)
 
-def build_fp_tree(data_iter, min_sup=2):
+def build_fp_tree(actionset_count_dict, min_sup=2):
     header = {} # key: name val: node
     item_count_dict = defaultdict(int)
-    actionset_count_dict = defaultdict(int)
     largeitem_count_dict = defaultdict(int)
     largeitemset = set()
     # count
-    for actionset in data_iter:
-        actionset_count_dict[actionset] += 1
+    for actionset, actionset_count in actionset_count_dict.items():
         for item in actionset:
-            item_count_dict[item] += 1
+            item_count_dict[item] += actionset_count
     # prune
     for k, v in item_count_dict.items():
         if v >= min_sup:
@@ -110,5 +108,47 @@ def build_fp_tree(data_iter, min_sup=2):
             key=lambda x: x[1], reverse=True)
         update_tree(root, header, ordered_actions, actionset_count, largeitem_count_dict)
     return root, header
+    
+def create_tree(data_iter, min_sup=2):
+    actionset_count_dict = defaultdict(int)
+    # count
+    for actionset in data_iter:
+        actionset_count_dict[actionset] += 1
+    return build_fp_tree(actionset_count_dict, min_sup)
 
+def ascend(node, prefixes):
+      if node.parent is not None:
+          prefixes.append(node.name)
+          ascend(node.parent, prefixes)
+
+def conditional_pattern_base(header_node):
+    conditional_paths = {}
+    node = header_node
+    while node is not None:
+        prefixes = []
+        ascend(node, prefixes)
+        if len(prefixes) > 1:
+            conditional_paths[frozenset(prefixes[1:])] = node.count
+        node = node.next
+    return conditional_paths
+
+def compute_large_itemsets(root, header, min_sup=2):
+    if root is None:
+        return {}
+    large_itemset_dict = {} # key: itemset val: support
+    for name, node in header.items():
+        conditional_paths = conditional_pattern_base(node)
+        sub_root, sub_header = build_fp_tree(conditional_paths, min_sup)
+        items_dict = compute_large_itemsets(sub_root, sub_header, min_sup)
+        update_dict = {}
         
+        # create single set with current count
+        update_dict[frozenset([node.name])] = node.count
+
+        # append current node.name to every key, retain count
+        for k, v in items_dict.items():
+            new_k = set(k)
+            new_k.add(node.name)
+            update_dict[frozenset(new_k)] = v
+        large_itemset_dict.update(update_dict)
+    return large_itemset_dict
