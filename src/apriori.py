@@ -14,6 +14,7 @@ Date: 2018/04/11 08:24:31
 
 import sys
 import time
+import freq_patt_tree as fp
 from itertools import chain, combinations
 from collections import defaultdict
 
@@ -75,7 +76,7 @@ def load_file(fname):
     fd = open(fname, 'r')
     for line in fd:
         line = line.strip().rstrip(',')
-        actionlist = frozenset(line.split(','))
+        actionset = frozenset(line.split(','))
         yield actionset
 
 def dump(itemset, rules):
@@ -117,9 +118,40 @@ def compute_large_itemsets(seed_itemsets, actionsets, min_support):
         cur_large_itemsets, update_dict = get_support_itemsets(
             candidate_itemsets, actionsets, min_support)
         update_support_dict(support_dict, update_dict)
-    return large_itemsets_dict, support_dict
+    return support_dict
 
-def run(data_iter, min_support, min_confidence, output_support_only=False):
+def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False):
+    support_dict = {}
+    if use_fp_tree == False:
+        seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
+        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
+    else:
+        root, header = fp.create_tree(data_iter, min_support)
+        support_dict = fp.compute_large_itemsets(root, header, min_support)
+
+    large_itemsets_with_support = []
+    recommendation_rules_with_confidence = []
+    
+    for itemset, support in support_dict.items():
+        large_itemsets_with_support.append((support, tuple(itemset)))
+    
+    if output_support_only:
+        return large_itemsets_with_support, recommendation_rules_with_confidence
+            
+    for itemset, support in support_dict.items():
+        sup_itemset = support_dict[itemset]
+        for subset in create_subset_generator(itemset):
+            subset = frozenset(subset)
+            if len(itemset) > len(subset):
+                sup_subset = support_dict[subset]
+                confidence = 1.0 * sup_itemset / sup_subset
+                if confidence >= min_confidence:
+                    recom_candidate = itemset.difference(subset)
+                    recommendation_rules_with_confidence.append(
+                        (confidence, (tuple(subset), tuple(recom_candidate))))
+    return large_itemsets_with_support, recommendation_rules_with_confidence
+
+def run_(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False):
     seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
     large_itemsets_dict, support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
 
