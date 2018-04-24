@@ -105,7 +105,7 @@ def build_fp_tree(actionset_count_dict, min_sup=2):
         if len(actions) == 0:
             continue
         ordered_actions = sorted([(action, largeitem_count_dict[action]) for action in actions],
-            key=lambda x: x[1], reverse=True)
+            key=lambda x: (x[1], x[0]), reverse=True)
         update_tree(root, header, ordered_actions, actionset_count, largeitem_count_dict)
     return root, header
     
