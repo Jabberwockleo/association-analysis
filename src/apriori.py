@@ -79,20 +79,22 @@ def load_file(fname):
         actionset = frozenset(line.split(','))
         yield actionset
 
-def dump(itemset, rules):
+def dump(itemset, rules, to_file_only=False):
     fn_items = "out_large_itemsets.csv"
     fn_rules = "out_recom_rules.csv"
     fd_items = open(fn_items, 'w')
     fd_rules = open(fn_rules, 'w')
     for sup, items in sorted(itemset, key=lambda x: x[0]):
-        print("Itemset: {} support: {:.3f}".format(items, sup))
+        if to_file_only == False:
+            print("Itemset: {} support: {:.3f}".format(items, sup))
         fd_items.write(str(sup) + ',')
         fd_items.write(','.join(items))
         fd_items.write('\n')
     fd_items.close()
     for con, rule in sorted(rules, key=lambda x: x[0]):
         items, recom = rule
-        print("Rule: {} => {} confidence: {:.3f}".format(items, recom, con))
+        if to_file_only == False:
+            print("Rule: {} => {} confidence: {:.3f}".format(items, recom, con))
         fd_rules.write(str(con) + ',')
         fd_rules.write('|'.join(items) + ',')
         fd_rules.write('|'.join(recom))
@@ -125,9 +127,11 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     if use_fp_tree == False:
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
         support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
+        print('len(support_dict):', len(support_dict))
     else:
         root, header = fp.create_tree(data_iter, min_support)
         support_dict = fp.compute_large_itemsets(root, header, min_support)
+        print('len(support_dict):', len(support_dict))
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
@@ -137,12 +141,17 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
-            
+
     for itemset, support in support_dict.items():
-        sup_itemset = support_dict[itemset]
-        for subset in create_subset_generator(itemset):
-            subset = frozenset(subset)
+        sup_itemset = support
+        for sub in create_subset_generator(itemset):
+            subset = frozenset(sub)
             if len(itemset) > len(subset):
+                if subset not in support_dict:
+                    print('== subset not in:')
+                    print('itemset:', itemset)
+                    print('-subset', subset)
+                    continue
                 sup_subset = support_dict[subset]
                 confidence = 1.0 * sup_itemset / sup_subset
                 if confidence >= min_confidence:
@@ -157,7 +166,7 @@ def run_(data_iter, min_support, min_confidence, use_fp_tree=True, output_suppor
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
-    
+
     for length, itemsets in large_itemsets_dict.items():
         large_itemsets_with_support.extend(
             [(support_dict[itemset], tuple(itemset)) for itemset in itemsets])

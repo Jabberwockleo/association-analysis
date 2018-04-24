@@ -143,15 +143,15 @@ def compute_large_itemsets(root, header, min_sup=2):
         sub_root, sub_header = build_fp_tree(conditional_paths, min_sup)
         items_dict = compute_large_itemsets(sub_root, sub_header, min_sup)
         update_dict = defaultdict(int)
-        
-        # create single set with current count
-        update_dict[frozenset([node.name])] += header_node_count
 
         # append current node.name to every key, retain count
         for k, v in items_dict.items():
             new_k = set(k)
             new_k.add(node.name)
             update_dict[frozenset(new_k)] += v
+
+        # create single set with current count
+        update_dict[frozenset([node.name])] += header_node_count
         
         # update final dict
         for k, v in update_dict.items():
