@@ -122,6 +122,32 @@ def compute_large_itemsets(seed_itemsets, actionsets, min_support):
         update_support_dict(support_dict, update_dict)
     return support_dict
 
+def load_support_dict(fname):
+    sup_dict = {}
+    fd = open(fname, 'r')
+    for line in fd:
+        line = line.strip().rstrip(',')
+        elems = line.split(',')
+        actionset = frozenset(elems[1:])
+        sup = elems[0]
+        sup_dict[actionset] = int(sup)
+    return sup_dict
+
+def compute_recom_rules(support_dict, min_confidence):
+    recommendation_rules_with_confidence = []
+    for itemset, support in support_dict.items():
+        sup_itemset = support
+        for sub in create_subset_generator(itemset):
+            subset = frozenset(sub)
+            if len(itemset) > len(subset):
+                sup_subset = support_dict[subset]
+                confidence = 1.0 * sup_itemset / sup_subset
+                if confidence >= min_confidence:
+                    recom_candidate = itemset.difference(subset)
+                    recommendation_rules_with_confidence.append(
+                        (confidence, (tuple(subset), tuple(recom_candidate))))
+    return recommendation_rules_with_confidence
+
 def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False):
     support_dict = {}
     if use_fp_tree == False:
@@ -142,15 +168,5 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
 
-    for itemset, support in support_dict.items():
-        sup_itemset = support
-        for sub in create_subset_generator(itemset):
-            subset = frozenset(sub)
-            if len(itemset) > len(subset):
-                sup_subset = support_dict[subset]
-                confidence = 1.0 * sup_itemset / sup_subset
-                if confidence >= min_confidence:
-                    recom_candidate = itemset.difference(subset)
-                    recommendation_rules_with_confidence.append(
-                        (confidence, (tuple(subset), tuple(recom_candidate))))
+    recommendation_rules_with_confidence = compute_recom_rules(support_dict, min_confidence)
     return large_itemsets_with_support, recommendation_rules_with_confidence
