@@ -12,7 +12,6 @@ Author: Wan Li
 Date: 2018/04/13 21:47:40
 """
 
-import pandas as pd
 import numpy as np
 from scipy import sparse
 
