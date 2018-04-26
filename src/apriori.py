@@ -133,7 +133,11 @@ def load_support_dict(fname):
         sup_dict[actionset] = int(sup)
     return sup_dict
 
-def compute_recom_rules(support_dict, min_confidence):
+def compute_recom_rules(support_dict, min_confidence, to_file_only=False):
+    fn_rules = "out_recom_rules.csv"
+    fd_rules = None
+    if to_file_only == True:
+        fd_rules = open(fn_rules, 'w')
     recommendation_rules_with_confidence = []
     for itemset, support in support_dict.items():
         sup_itemset = support
@@ -144,11 +148,19 @@ def compute_recom_rules(support_dict, min_confidence):
                 confidence = 1.0 * sup_itemset / sup_subset
                 if confidence >= min_confidence:
                     recom_candidate = itemset.difference(subset)
-                    recommendation_rules_with_confidence.append(
-                        (confidence, (tuple(subset), tuple(recom_candidate))))
+                    if to_file_only == False:
+                        recommendation_rules_with_confidence.append(
+                            (confidence, (tuple(subset), tuple(recom_candidate))))
+                    else:
+                        fd_rules.write(str(con) + ',')
+                        fd_rules.write('|'.join(subset) + ',')
+                        fd_rules.write('|'.join(recom_candidate))
+                        fd_rules.write('\n')
+    if fd_rules is not None:
+        fd_rules.close()
     return recommendation_rules_with_confidence
 
-def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False):
+def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False, to_file_only=False):
     support_dict = {}
     if use_fp_tree == False:
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
@@ -168,5 +180,5 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
 
-    recommendation_rules_with_confidence = compute_recom_rules(support_dict, min_confidence)
+    recommendation_rules_with_confidence = compute_recom_rules(support_dict, min_confidence, to_file_only)
     return large_itemsets_with_support, recommendation_rules_with_confidence
