@@ -133,12 +133,15 @@ def load_support_dict(fname):
         sup_dict[actionset] = int(sup)
     return sup_dict
 
-def compute_recom_rules(support_dict, min_confidence, to_file_only=False):
+def compute_recom_rules(support_dict, min_confidence, to_file_only=False, print_debug=False):
     fn_rules = "out_recom_rules.csv"
     fd_rules = None
     if to_file_only == True:
         fd_rules = open(fn_rules, 'w')
     recommendation_rules_with_confidence = []
+    support_dict_len = len(support_dict)
+    iter_count = 0
+    recom_count = 0
     for itemset, support in support_dict.items():
         sup_itemset = support
         for sub in create_subset_generator(itemset):
@@ -147,29 +150,37 @@ def compute_recom_rules(support_dict, min_confidence, to_file_only=False):
                 sup_subset = support_dict[subset]
                 confidence = 1.0 * sup_itemset / sup_subset
                 if confidence >= min_confidence:
-                    recom_candidate = itemset.difference(subset)
+                    recom_itemset = itemset.difference(subset)
+                    if print_debug == True:
+                        recom_count += 1
                     if to_file_only == False:
                         recommendation_rules_with_confidence.append(
-                            (confidence, (tuple(subset), tuple(recom_candidate))))
+                            (confidence, (tuple(subset), tuple(recom_itemset))))
                     else:
-                        fd_rules.write(str(con) + ',')
+                        fd_rules.write(str(confidence) + ',')
                         fd_rules.write('|'.join(subset) + ',')
-                        fd_rules.write('|'.join(recom_candidate))
+                        fd_rules.write('|'.join(recom_itemset))
                         fd_rules.write('\n')
+        if print_debug == True:
+            iter_count += 1
+            print("iter {}/{}".format(iter_count, support_dict_len))
+            print("recom total {}".format(recom_count))
     if fd_rules is not None:
         fd_rules.close()
     return recommendation_rules_with_confidence
 
-def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False, to_file_only=False):
+def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False, to_file_only=False, print_debug=False):
     support_dict = {}
     if use_fp_tree == False:
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
-        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
-        print('len(support_dict):', len(support_dict))
+        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support, print_debug)
+        if print_debug == True:
+            print('len(support_dict):', len(support_dict))
     else:
         root, header = fp.create_tree(data_iter, min_support)
         support_dict = fp.compute_large_itemsets(root, header, min_support)
-        print('len(support_dict):', len(support_dict))
+        if print_debug == True:
+            print('len(support_dict):', len(support_dict))
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
@@ -180,5 +191,5 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
 
-    recommendation_rules_with_confidence = compute_recom_rules(support_dict, min_confidence, to_file_only)
+    recommendation_rules_with_confidence = compute_recom_rules(support_dict, min_confidence, to_file_only, print_debug)
     return large_itemsets_with_support, recommendation_rules_with_confidence
