@@ -173,7 +173,7 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
     support_dict = {}
     if use_fp_tree == False:
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
-        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support, print_debug)
+        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
         if print_debug == True:
             print('len(support_dict):', len(support_dict))
     else:
