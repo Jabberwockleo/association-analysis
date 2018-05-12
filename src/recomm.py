@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 ########################################################################
 #
-# Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
+# Copyright (c) 2018 Wan Li. All Rights Reserved
 #
 ########################################################################
 
 """
 File: recomm.py
-Author: wanli03(wanli03@baidu.com)
+Author: Wan Li
 Date: 2018/05/10 18:36:03
 """
 
