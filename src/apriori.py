@@ -184,10 +184,10 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support
 
     large_itemsets_with_support = []
     recommendation_rules_with_confidence = []
-    
+
     for itemset, support in support_dict.items():
         large_itemsets_with_support.append((support, tuple(itemset)))
-    
+
     if output_support_only:
         return large_itemsets_with_support, recommendation_rules_with_confidence
 
