@@ -101,7 +101,7 @@ def dump(itemset, rules, to_file_only=False):
         fd_rules.write('\n')
     fd_rules.close()
 
-def compute_large_itemsets(seed_itemsets, actionsets, min_support):
+def compute_large_itemsets(seed_itemsets, actionsets, min_support, max_large_item_len=None):
     support_dict = defaultdict(int)
     large_itemsets_dict = dict() # key: length val: set of itemset
     # seeding
@@ -120,6 +120,8 @@ def compute_large_itemsets(seed_itemsets, actionsets, min_support):
         cur_large_itemsets, update_dict = get_support_itemsets(
             candidate_itemsets, actionsets, min_support)
         update_support_dict(support_dict, update_dict)
+        if max_large_item_len is not None and cur_itemsets_size == max_large_item_len:
+            break
     return support_dict
 
 def load_support_dict(fname):
@@ -169,11 +171,14 @@ def compute_recom_rules(support_dict, min_confidence, to_file_only=False, print_
         fd_rules.close()
     return recommendation_rules_with_confidence
 
-def run(data_iter, min_support, min_confidence, use_fp_tree=True, output_support_only=False, to_file_only=False, print_debug=False):
+def run(data_iter, min_support, min_confidence, use_fp_tree=True, \
+    max_large_item_len=None, output_support_only=False, to_file_only=False, print_debug=False):
     support_dict = {}
+    if max_large_item_len is not None:
+        use_fp_tree = False
     if use_fp_tree == False:
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
-        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support)
+        support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support, max_large_item_len=max_large_item_len)
         if print_debug == True:
             print('len(support_dict):', len(support_dict))
     else:
