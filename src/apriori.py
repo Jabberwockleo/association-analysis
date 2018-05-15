@@ -105,8 +105,10 @@ def compute_large_itemsets(seed_itemsets, actionsets, min_support, max_large_ite
     support_dict = defaultdict(int)
     large_itemsets_dict = dict() # key: length val: set of itemset
     # seeding
+    print('seeding support itemset..')
     seed_sup_itemsets, update_dict = get_support_itemsets(
         seed_itemsets, actionsets, min_support)
+    print('seed support itemset: {}'.format(len(seed_sup_itemsets)))
     update_support_dict(support_dict, update_dict)
     # compute larget itemsets
     cur_large_itemsets = seed_sup_itemsets
@@ -115,10 +117,13 @@ def compute_large_itemsets(seed_itemsets, actionsets, min_support, max_large_ite
     while (len(cur_large_itemsets) != 0):
         large_itemsets_dict[cur_itemsets_size] = cur_large_itemsets
         cur_itemsets_size += 1
+        print('generating candidate items per sized: {}'.format(cur_itemsets_size))
         candidate_itemsets = join_itemsets_with_fixed_elem_size(
             cur_large_itemsets, cur_itemsets_size)
+        print('generated candidate itemset sized: {}'.format(len(candidate_itemsets)))
         cur_large_itemsets, update_dict = get_support_itemsets(
             candidate_itemsets, actionsets, min_support)
+        print('filtered support itemset sized: {}'.format(len(cur_large_itemsets)))
         update_support_dict(support_dict, update_dict)
         if max_large_item_len is not None and cur_itemsets_size == max_large_item_len:
             break
@@ -177,7 +182,9 @@ def run(data_iter, min_support, min_confidence, use_fp_tree=True, \
     if max_large_item_len is not None:
         use_fp_tree = False
     if use_fp_tree == False:
+        print('generating seeding itemsets and actionsets..')
         seed_itemsets, actionsets = generate_seed_itemsets_and_actionsets(data_iter)
+        print('generated seeding itemsets: {}, actionsets: {}'.format(len(seed_itemsets), len(actionsets)))
         support_dict = compute_large_itemsets(seed_itemsets, actionsets, min_support, max_large_item_len=max_large_item_len)
         if print_debug == True:
             print('len(support_dict):', len(support_dict))
